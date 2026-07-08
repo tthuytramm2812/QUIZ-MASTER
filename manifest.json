@@ -3,6 +3,7 @@
   "short_name": "🧠 QUIZ MASTER",
   "description": "Tích lũy kiến thức bằng câu hỏi trắc nghiệm",
   "start_url": "/QUIZ-MASTER/index.html"
+  "scope": "/QUIZ-MASTER/"
   "display": "standalone",
   "background_color": "#fdf0f5",
   "theme_color": "#ffd02c",
