@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tủ đồ Robot</title>
+    <!-- Phải gọi đúng file CSS của bạn ở đây -->
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+
+<!-- CHÍNH LÀ CÁI KHUNG NÀY ĐANG BỊ THIẾU -->
+<div id="app-container">
+    
+    <!-- Bạn có thể thêm nút quay lại vào đây -->
+    <div id="top-bar">
+        <button id="back-btn" style="display:block;" onclick="window.location.href='trangchu.html'">←</button>
+    </div>
+
+    <div id="main-content" style="padding: 20px;">
+        <h1 class="title">🎒 TỦ ĐỒ</h1>
+        <div id="score-display" style="margin-bottom: 20px; font-weight: bold;">Điểm hiện có: 0 ⭐</div>
+        <div class="skin-grid" id="skin-list"></div>
+    </div>
+
+</div>
+
+<script>
+    // 1. Khai báo dữ liệu skin
+    // Danh sách 6 bộ đồ (skins)
+const skins = [
+    { id: 1, name: 'Robot Gốc', icon: '🤖', price: 0, owned: true },
+    { id: 2, name: 'Phi hành gia', icon: '👨‍🚀', price: 50, owned: false },
+    { id: 3, name: 'Robot Punk', icon: '🎸', price: 100, owned: false },
+    { id: 4, name: 'Robot Phù thủy', icon: '🧙‍♂️', price: 150, owned: false },
+    { id: 5, name: 'Robot Ninja', icon: '🥷', price: 200, owned: false },
+    { id: 6, name: 'Robot Cảnh sát', icon: '👮', price: 250, owned: false }
+];
+
+    // 2. Hàm hiển thị
+    function renderSkins() {
+        const list = document.getElementById('skin-list');
+        // Kiểm tra xem phần tử skin-list có tồn tại không
+        if (!list) {
+            console.error("Không tìm thấy thẻ có id='skin-list'!");
+            return;
+        }
+        
+        list.innerHTML = skins.map(s => `
+            <div class="skin-card">
+                <div class="skin-icon">${s.icon}</div>
+                <p>${s.name}</p>
+                <button onclick="buySkin(${s.id})" ${s.owned ? 'disabled' : ''}>
+                    ${s.owned ? 'Đã sở hữu' : s.price + ' ⭐'}
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // 3. ĐẢM BẢO HÀM CHẠY KHI TRANG TẢI XONG
+    window.onload = function() {
+        let score = parseInt(localStorage.getItem('totalScore')) || 0;
+        document.getElementById('score-display').innerText = `Điểm hiện có: ${score} ⭐`;
+        renderSkins(); // Gọi hàm này thì đồ mới hiện ra được
+    };
+    
+    // ... (phần buySkin để nguyên)
+</script>
+
+</body>
+</html>

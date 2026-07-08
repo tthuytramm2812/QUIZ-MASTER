@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robot Trainer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app-container">
+    <div id="top-bar">
+        <button id="back-btn" onclick="goHome()">←</button>
+        <div class="stats-group">
+            <div class="pop-badge badge-lv" id="score-badge">⭐ Điểm: 0</div>
+            <div class="pop-badge badge-xp" id="progress-badge">🎯 Tiến trình</div>
+        </div>
+    </div>
+	<div>
+	<div id="chat-btn" onclick="toggleChat()">💬</div>
+
+	<div id="chat-panel">
+    <div id="chat-header">
+        <span>🤖 Trợ lý Robot</span>
+        <span id="chat-close" onclick="toggleChat()">✕</span>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-quick-replies">
+        <button class="quick-reply-btn" onclick="quickReply('Cách chơi')">Cách chơi</button>
+        <button class="quick-reply-btn" onclick="quickReply('Tính điểm')">Tính điểm</button>
+        <button class="quick-reply-btn" onclick="quickReply('Thời gian')">Thời gian</button>
+        <button class="quick-reply-btn" onclick="quickReply('Chủ đề')">Chủ đề</button>
+        <button class="quick-reply-btn" onclick="quickReply('Xếp hạng')">Xếp hạng</button>
+    </div>
+    <div id="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Nhập câu hỏi..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+        <button id="chat-send-btn" onclick="sendChatMessage()">Gửi</button>
+    </div>
+	</div>
+	</div>
+
+    <div id="main-content">
+        <div class="robot-scene">
+            <div class="cute-robot" id="robot-bunny">
+                <div class="rabbit-ear ear-l"></div>
+                <div class="rabbit-ear ear-r"></div>
+                <div class="robot-head">
+                    <div class="robot-screen">
+                        <div class="eyes-row">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="robot-shadow"></div>
+            </div>
+        </div>
+
+        <div id="login-screen">
+            <h1 class="title">CHÀO MỪNG!</h1>
+            <p class="subtitle">Kiểm tra kiến thức, thu thập điểm thưởng và trở thành người đứng đầu.</p>
+            <div class="login-wrapper">
+                <input type="text" id="name-input" class="login-input" placeholder="Nhập tên của bạn..." maxlength="20">
+                <button class="btn-play" onclick="submitLogin()">🏆 BẮT ĐẦU</button>
+            </div>
+        </div>
+
+        <div id="loading-text" style="display:none;">Đang đồng bộ dữ liệu với bộ não Robot...</div>
+
+        <div id="home-screen" style="display: none;">
+            <h1 class="title">🧠 QUIZ MASTER</h1>
+            <p class="subtitle">Thử thách kiến thức, tích lũy điểm số và chinh phục bảng xếp hạng!</p>
+
+            <div class="btn-container">
+                <button class="btn-play" onclick="goToTopics()">🚀 CHƠI NGAY</button>
+            </div>
+
+            <div id="nav-bar">
+                <div class="nav-card" onclick="goToTopics()"><span class="nav-icon">📚</span><span class="nav-text">Chủ đề</span></div>
+                <div class="nav-card" onclick="goToLeaderboard()"><span class="nav-icon">🏆</span><span class="nav-text">Xếp hạng</span></div>
+                <div class="nav-card" onclick="window.location.href='skin.html'"><span class="nav-icon">🎒</span><span class="nav-text">Tủ đồ</span></div>
+            </div>
+        </div>
+
+        <div id="topic-screen" style="display: none; width:100%;"></div>
+
+        <div id="leaderboard-screen" style="display: none; width:100%;"></div>
+
+        <div id="quiz-screen" style="display: none; width:100%;">
+            <div id="timer-section">
+                <div id="timer-badge">⏱ 15s</div>
+                <div id="timer-bar-container"><div id="timer-bar-fill"></div></div>
+            </div>
+
+            <div class="question-card" id="question-text">Nội dung câu hỏi?</div>
+            <div id="options-container">
+                <button class="option-btn" onclick="checkAnswer('A')"><div class="option-badge">A</div><span id="opt-A"></span></button>
+                <button class="option-btn" onclick="checkAnswer('B')"><div class="option-badge">B</div><span id="opt-B"></span></button>
+                <button class="option-btn" onclick="checkAnswer('C')"><div class="option-badge">C</div><span id="opt-C"></span></button>
+                <button class="option-btn" onclick="checkAnswer('D')"><div class="option-badge">D</div><span id="opt-D"></span></button>
+            </div>
+        </div>
+    </div>
+	
+</div>
+
+<script>
+
+    // Lệnh này chạy ngay khi trang vừa tải xong để giấu thanh điểm
+    document.getElementById('top-bar').style.display = 'none';
+
+    // Các hàm của bạn vẫn giữ nguyên...
+    function proceedToHome() {
+        if (loginSubmitted) {
+            document.getElementById('top-bar').style.display = 'flex'; // Hiện ở Home
+            // ... các lệnh khác ...
+        }
+    }
+   
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbweexMZc3aJ3gJXUnM5Knzzfnp2GrGWzJELAJPhTsf0KTuuTwP2tvvNk-7LPkKopZtj/exec';
+let allQuestions = [];
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let currentCategory = "";
+let dataLoaded = false;
+let loginSubmitted = false;
+let score = 0;
+let playerName = "";
+const TIME_LIMIT = 15;
+let timeLeft = TIME_LIMIT;
+let timerInterval = null;
+
+window.addEventListener('DOMContentLoaded', () => {
+    loadQuestionsFromSheet();
+});
+
+function loadQuestionsFromSheet() {
+    fetch(SHEET_API_URL)
+        .then(res => res.json())
+        .then(data => {
+            allQuestions = data;
+            dataLoaded = true;
+            proceedToHome();
+        })
+        .catch(err => {
+            document.getElementById('loading-text').style.display = 'block';
+            document.getElementById('loading-text').innerText = "Lỗi tải câu hỏi, kiểm tra lại đường truyền! (" + err + ")";
+            console.error(err);
+        });
+}
+
+// ===== XỬ LÝ ĐĂNG NHẬP =====
+function submitLogin() {
+    const input = document.getElementById('name-input').value.trim();
+    playerName = input || "Người chơi";
+    loginSubmitted = true;
+
+    logUsername();
+
+    document.getElementById('login-screen').style.display = 'none';
+
+    if (dataLoaded) {
+        document.getElementById('home-screen').style.display = 'block';
+		document.getElementById('chat-btn').style.display = 'flex';
+    } else {
+        document.getElementById('loading-text').style.display = 'block';
+    }
+}
+
+// ===== GHI LOG USERNAME KHI ĐĂNG NHẬP =====
+function logUsername() {
+    fetch(SHEET_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+            type: 'login',
+            name: playerName
+        })
+    }).catch(err => console.error('Lỗi ghi log login:', err));
+}
+
+function proceedToHome() {
+    if (loginSubmitted) {
+        document.getElementById('loading-text').style.display = 'none';
+        document.getElementById('home-screen').style.display = 'block';
+		document.getElementById('chat-btn').style.display = 'flex';
+
+        // HIỆN thanh bar ở trang chủ
+        document.getElementById('top-bar').style.display = 'flex'; 
+        document.getElementById('back-btn').style.display = 'none'; 
+    }
+}
+
+function goHome() {
+    clearInterval(timerInterval);
+    document.getElementById('topic-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('leaderboard-screen').style.display = 'none';
+    document.getElementById('home-screen').style.display = 'block';
+
+    // HIỆN thanh bar ở trang chủ
+    document.getElementById('top-bar').style.display = 'flex'; 
+    document.getElementById('back-btn').style.display = 'none';
+	 document.getElementById('chat-btn').style.display = 'flex';
+}
+
+function goToTopics() {
+    document.getElementById('home-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('leaderboard-screen').style.display = 'none';
+    document.getElementById('topic-screen').style.display = 'block';
+    document.getElementById('back-btn').style.display = 'block';
+
+    const categories = [...new Set(allQuestions.map(q => q.category).filter(c => c))];
+    const colors = ['var(--pop-pink)', 'var(--pop-mint)', 'var(--pop-yellow)', 'var(--pop-purple)'];
+    const icons = { 'E-commerce': '🛒', 'Sinh học': '🌱' };
+
+    let html = '<h2 class="screen-title">CHỌN CHỦ ĐỀ LUYỆN</h2>';
+    categories.forEach((cat, i) => {
+        const color = colors[i % colors.length];
+        const icon = icons[cat] || '📝';
+        const count = allQuestions.filter(q => q.category === cat).length;
+        html += `<div class="topic-card" style="background-color:${color};" onclick="startQuiz('${cat}')">
+            <div class="topic-icon">${icon}</div>
+            <div class="topic-info">
+                <span class="topic-name">${cat}</span>
+                <span class="topic-desc">${count} câu hỏi</span>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById('topic-screen').innerHTML = html;
+}
+
+function startQuiz(categoryName) {
+    currentQuestions = allQuestions.filter(q => q.category && q.category.toString().trim() === categoryName.trim());
+    currentQuestionIndex = 0;
+    score = 0;
+    currentCategory = categoryName;
+
+   
+    document.getElementById('topic-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'block';
+
+    // Vẫn GIỮ thanh bar, nhưng cho hiện nút quay lại
+    document.getElementById('top-bar').style.display = 'flex';
+    document.getElementById('back-btn').style.display = 'block'; 
+    showQuestion();
+}
+
+function showQuestion() {
+    const q = currentQuestions[currentQuestionIndex];
+    timeLeft = TIME_LIMIT;
+    clearInterval(timerInterval);
+
+    document.getElementById('progress-badge').innerText = `🎯 Câu ${currentQuestionIndex + 1}/${currentQuestions.length}`;
+    document.getElementById('score-badge').innerText = `⭐ Điểm: ${score}`;
+
+    document.getElementById('question-text').innerText = q.question;
+    document.getElementById('opt-A').innerText = q.option_a;
+    document.getElementById('opt-B').innerText = q.option_b;
+    document.getElementById('opt-C').innerText = q.option_c;
+    document.getElementById('opt-D').innerText = q.option_d;
+
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.remove('correct', 'wrong');
+        btn.disabled = false;
+    });
+
+    updateTimerDisplay();
+
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            lockAnswer(null, q.correct_answer);
+            setTimeout(nextQuestion, 1000);
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const timerBadge = document.getElementById('timer-badge');
+    const timerBarFill = document.getElementById('timer-bar-fill');
+    timerBadge.innerText = `⏱ ${timeLeft}s`;
+    timerBarFill.style.width = ((timeLeft / TIME_LIMIT) * 100) + '%';
+    if (timeLeft <= 5) {
+        timerBadge.style.backgroundColor = '#ff4d4d';
+        timerBarFill.style.backgroundColor = '#ff4d4d';
+    } else {
+        timerBadge.style.backgroundColor = 'var(--pop-pink)';
+        timerBarFill.style.backgroundColor = 'var(--pop-mint)';
+    }
+}
+
+function checkAnswer(ans) {
+    clearInterval(timerInterval);
+    const q = currentQuestions[currentQuestionIndex];
+    const correct = q.correct_answer.toString().trim().toUpperCase();
+    if (ans === correct) score += 10;
+    lockAnswer(ans, correct);
+    setTimeout(nextQuestion, 1000);
+}
+
+function lockAnswer(chosenAns, correctAns) {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.disabled = true;
+        const letter = btn.getAttribute('onclick').match(/'([A-D])'/)[1];
+        if (letter === correctAns) btn.classList.add('correct');
+        else if (letter === chosenAns) btn.classList.add('wrong');
+    });
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < currentQuestions.length) {
+        showQuestion();
+    } else {
+        saveResultToSheet();
+        document.getElementById('quiz-screen').innerHTML = `
+            <div class="result-wrapper">
+                <div class="result-emoji">🎉</div>
+                <div class="result-title">Hoàn thành bài huấn luyện!</div>
+                <div class="result-score-box">
+                    <span class="score-number">${score}</span>
+                    <span class="score-label">ĐIỂM ĐẠT ĐƯỢC</span>
+                </div>
+                <div class="result-buttons">
+                    <button class="btn-play" onclick="goToLeaderboard()">🏆 Xem bảng xếp hạng</button>
+                    <button class="btn-play" onclick="goToTopics()">🔁 Chơi chủ đề khác</button>
+                    <button class="btn-play btn-secondary" onclick="goHome()">🏠 Về trang chủ</button>
+                </div>
+            </div>`;
+    }
+}
+
+// ===== GHI KẾT QUẢ LÊN SHEET "Results" =====
+function saveResultToSheet() {
+    fetch(SHEET_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+            type: 'result',
+            name: playerName,
+            score: score,
+            category: currentCategory
+        })
+    }).catch(err => console.error('Lỗi lưu kết quả:', err));
+}
+
+// ===== MÀN HÌNH XẾP HẠNG =====
+function goToLeaderboard() {
+    document.getElementById('home-screen').style.display = 'none';
+    document.getElementById('topic-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('leaderboard-screen').style.display = 'block';
+    document.getElementById('back-btn').style.display = 'block';
+
+    const board = document.getElementById('leaderboard-screen');
+    board.innerHTML = '<h2 class="screen-title">🏆 BẢNG XẾP HẠNG</h2><div id="leaderboard-list">Đang tải...</div>';
+
+    fetch(SHEET_API_URL + '?sheet=Results')
+        .then(res => res.json())
+        .then(data => {
+            const sorted = data
+                .filter(r => r.score !== undefined && r.score !== "")
+                .sort((a, b) => Number(b.score) - Number(a.score))
+                .slice(0, 10);
+
+            const list = document.getElementById('leaderboard-list');
+
+            if (sorted.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#7b7885;">Chưa có ai chơi cả, hãy là người đầu tiên!</p>';
+                return;
+            }
+
+            list.innerHTML = sorted.map((r, i) => {
+                const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+                return `<div class="leaderboard-item ${rankClass}">
+                    <div class="rank-number">${i + 1}</div>
+                    <div class="leaderboard-info">
+                        <span class="leaderboard-name">${r.user_name || 'Ẩn danh'}</span>
+                        <span class="leaderboard-category">${r.category || ''}</span>
+                    </div>
+                    <div class="leaderboard-score">${r.score}</div>
+                </div>`;
+            }).join('');
+        })
+        .catch(err => {
+            document.getElementById('leaderboard-list').innerText = 'Lỗi tải bảng xếp hạng.';
+            console.error(err);
+        });
+}
+// ===== TƯƠNG TÁC ROBOT (bấm vào robot) =====
+function petRobot() {
+    const robot = document.getElementById('robot-bunny');
+    robot.classList.add('jump');
+    showSparkle(robot);
+    setTimeout(() => robot.classList.remove('jump'), 600);
+}
+ 
+function showSparkle(robotEl) {
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle';
+    sparkle.innerText = '✨';
+    sparkle.style.left = (Math.random() * 60 + 20) + 'px';
+    sparkle.style.top = '10px';
+    robotEl.appendChild(sparkle);
+    setTimeout(() => sparkle.remove(), 800);
+}
+ 
+// ===== CHATBOT FAQ =====
+let chatOpened = false;
+ 
+function toggleChat() {
+    const panel = document.getElementById('chat-panel');
+    const isOpen = panel.style.display === 'flex';
+    panel.style.display = isOpen ? 'none' : 'flex';
+ 
+    if (!isOpen && !chatOpened) {
+        chatOpened = true;
+        addChatMessage('Xin chào! Mình là Trợ lý Robot 🤖 Bạn cần hỏi gì nè?', 'bot');
+    }
+}
+ 
+function addChatMessage(text, sender) {
+    const messages = document.getElementById('chat-messages');
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + sender;
+    bubble.innerText = text;
+    messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+}
+ 
+function quickReply(text) {
+    document.getElementById('chat-input').value = text;
+    sendChatMessage();
+}
+ 
+function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+ 
+    addChatMessage(text, 'user');
+    input.value = '';
+ 
+    setTimeout(() => {
+        addChatMessage(getBotReply(text), 'bot');
+    }, 400);
+}
+ 
+function getBotReply(text) {
+    const t = text.toLowerCase();
+ 
+    if (t.includes('chơi') || t.includes('cách')) {
+        return 'Bạn chọn 1 chủ đề, trả lời 4 đáp án A/B/C/D trong thời gian giới hạn. Trả lời đúng được cộng điểm nhé! 🎯';
+    }
+    if (t.includes('điểm')) {
+        return 'Mỗi câu đúng được +10 điểm. Trả lời càng nhiều câu đúng, điểm càng cao! ⭐';
+    }
+    if (t.includes('thời gian') || t.includes('giây') || t.includes('timer')) {
+        return 'Mỗi câu hỏi có 15 giây để trả lời. Hết giờ mà chưa chọn thì tính sai luôn nha! ⏱';
+    }
+    if (t.includes('chủ đề')) {
+        return 'Chủ đề hiện có lấy trực tiếp từ dữ liệu câu hỏi, bạn xem ở màn "Chủ đề" để biết đầy đủ nhé! 📚';
+    }
+    if (t.includes('xếp hạng') || t.includes('leaderboard')) {
+        return 'Bảng xếp hạng hiện Top 10 người điểm cao nhất, cập nhật mỗi khi có người chơi xong 1 lượt! 🏆';
+    }
+    if (t.includes('robot') || t.includes('cưng') || t.includes('dễ thương')) {
+        return 'Cảm ơn bạn! Thử bấm vào mình xem, mình sẽ nhảy cho bạn xem nè 🐰✨';
+    }
+ 
+    return 'Xin lỗi, mình chưa hiểu câu này 😅 Bạn thử hỏi về: cách chơi, tính điểm, thời gian, chủ đề, hoặc xếp hạng nhé!';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Quiz API</title>
+</head>
+<body>
+  <h1>Test kết nối Google Sheet</h1>
+  <div id="output">Đang tải...</div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbweexMZc3aJ3gJXUnM5Knzzfnp2GrGWzJELAJPhTsf0KTuuTwP2tvvNk-7LPkKopZtj/exec";
+    fetch(API_URL)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // xem data trong Console (F12)
+        document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+      })
+      .catch(error => {
+        document.getElementById("output").innerText = "Lỗi: " + error;
+      });
+  </script>
+</body>
+</html>
